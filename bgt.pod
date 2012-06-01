@@ -1,0 +1,322 @@
+=head1 NAME
+
+bgt - create and manage a budget from the command-line.
+
+=head1 SYNOPSIS
+
+bgt 
+
+=head1 DESCRIPTION
+
+The bgt(1) command allows the user to create and manage a budget from the command-line.
+It stores the information in a SQLite3 database file (by default in ~/.bgt/bgt.db).
+All management and reporting activities with bgt are accessible from the command-line.
+There is no GUI interaction necessary when using bgt.
+
+The bgt(1) command maintains a list of categories with balances in each category.  Each
+transaction that is added to the budget has to specify one of the categories and will
+alter the value of the category.  For example, if you write a check for 32 dollars for
+Groceries, you would subtract 32 dollars from your Groceries category.
+
+=head1 OPTIONS
+
+ bgt [options]
+
+ Action Options
+
+  --ls
+  --add
+  --edit
+  --rm
+  --recalc
+  --qry 'QRY_STR'
+  --exp
+  --inc
+  --net
+  --scr
+  --arch
+
+ Options for specifying criteria
+
+  --bgt 'BGT_FL_NM'
+  --catt 'CATNAME'
+  --cat 'CATNUM'
+  --amt 'AMT'
+  --to 'TO_WHOM'
+  --cmt 'COMMENT'
+  --tran 'TRANNUM'
+  --beg 'BEG_TRAN'
+  --end 'END_TRAN'
+  --help
+
+B<--ls> The --ls switch causes bgt to post any outstanding (unposted) transactions and generate
+a list of category balances.
+
+B<--add> The --add switch adds a transaction.  There are four items necessary when you add a
+transaction.  The category (either specified using --catt or --cat), the amount (specified
+using --amt), the to field (specified using --to) and a comment (specified usint --cmt).
+
+B<--edit> The --edit switch allows the user to edit a transaction (an entry) by transaction id
+(using the --tran switch).  Anything specified on the command-line, up to and including all
+four of --amt, --to, --cat (or --catt), and/or --cmt, are changed on the transaction.
+
+B<--rm> The --rm switch allows the user to remove a transaction.  A copy is made of the transaction
+in the archive table and it is removed from the tran table.  A recalc is forced after a transaction
+is removed.
+
+B<--recalc> The --recalc switch forces a recalc of all the transactions in the tran table.  Unlike a posting during a
+--ls, this will act is if nothing is posted and recalculate everything.  Anything that is not
+posted will get flagged as posted after this is complete.  Finally, a listing of the recalculated
+balances is produced.
+
+B<--qry 'QRY_STR'>  The --qry switch allows the user to query for transactions by specifying matching
+criteria.  The QRY_STR will determine the criteria.  The following query types are supported:
+
+        dt:STR The dt: query takes all or part of a date and time stamp, allowing the user
+        to query on parts of dates.
+        
+        st:STR The dt: query allows the user to query on the status of the transaction.
+
+        to:STR The to: query allows the user to query on the to field.
+
+        cat:STR The cat: query allows the user to query on the category field.
+
+        cmt:STR The cmt: query allows the user to query on the comment field.
+
+        amt:STR The amt: query allows the user to query on the amount field.
+
+        mr The mr query generates a machine-readable (colon-delimited) list of all transactions.
+
+        Anything else  Any other query string generates a list of transactions in a human readable form.
+
+B<--exp> The --exp switch generates a report of all expenses by categories.  The --exp switch causes budget
+to look at all the transactions with negative amounts (except those that have a to field like 'adjust').
+It then adds these up and generates a report.  The user can use --beg to specify a beginning transaction
+(otherwise the first one is assumed) and/or --end to specify an ending transaction (otherwise the last one
+is assumed).
+
+B<--inc> The --inc switch is like the --exp switch except that it reports on income rather than expenses.
+
+B<--net> The --net switch is similar to --exp and --inc, except that it includes all the transactions less
+those that have a to field like 'adjust'.
+
+B<--scr> The --scr switch generates the commands necessary to recreate the transactions in the bgt.db tran
+table.  This includes the value of the --bgt switch, if any.
+
+B<--arch> The --arch switch archieves all the transactions in the tran table.  Then, it recreates enough
+transactions to reset the balances of the categories to what they were before the archiving occurred.  This
+allows the user to keep their transaction table cleaned out of old stuff.  It is not necessary to do an
+archive, but it is available should someone want to use it.
+
+B<--csv> The --csv switch generates CSV output of all the transactions in the tran table.
+
+B<--nclr 'FILE'> The --nclr switch changes the output of --ls so that the contents of the file specified by FILE are
+incorporated.  So, for example, assume that you have a file called jan.nc and it contains the following:
+
+ # Outstanding checks for January.
+ Mortgage:-997.28
+ Educagtion:-50.00
+ Education:-35.00
+
+If you use the command
+
+ bgt --ls --nclr jan.nc
+
+bgt will show your balances with the data in jan.nc incorporated.  This allows you to keep the posted balance the same
+as what the bank shows in the account, while giving you the ability to know how much will be in there after everything clears.
+Notice that you can have a category more than once.
+
+B<--bgt 'BGT_PATH'> The --bgt switch allows the user to specify a directory for the bgt.db file.  If one is not specified,
+~/.bgt is used by default.
+
+B<--catt 'CATNAME'> The --catt switch allows the user to specify a category by name.  Category names can be arbitrarily
+long (up to 256 characters in length) and can have spaces.
+
+B<--cat CATNUM> The --cat switch allows the user to specify a category by number.  When categories are created,
+they are assigned a number.  You can use this number to refer to that category.
+
+B<--amt 'AMT'> The --amt switch is used to specify an amount.  The amount can be any valid positive or
+negative number.  The scale used to track and add or subtract numbers is 2, so any decimal places
+beyond that are discarded.
+
+B<--to 'TO_WHOM'> The --to switch allows the user to specify the recipient of a transaction.
+
+B<--cmt 'COMMENT'> The --cmt switch allows the user to specify a comment for a transaction.
+
+B<--tran 'TRANNUM'> The --tran switch allows the user to enter a transaction number, for those action switches
+that require a transaction number, like --edit or --rm.
+
+B<--beg 'BEG_TRAN'>
+B<--end 'END_TRAN'> The --beg and --end switches allow the user to specify a range of transactions.  If you specify
+a valid --beg, then the operation being requested (like --exp, --inc, or --net) will go from that beginning to the last
+transaction.  If you specify --end, the operation will go from the beginning of the transactions to that one, inclusive.
+If you specify both, the operation will only include the beginning, the end, and all the ones in between.
+
+B<--help> This generates a help screen.
+
+=head1 EXAMPLES
+
+B<bgt>
+
+This initializes the bgt.db database (in $HOME/.bgt, by default).  If you want the budget database to be initialized
+somewhere else, you can specify a directory with
+
+B<bgt --bgt $HOME/budget>
+
+This command will initialize the bgt.db file in $HOME/budget if it doesn't exist there already.  If it is successful, it
+will say something like
+
+Running do_initialize() for /home/dfmay/budget/bgt.db
+
+and exit with a 0 return value.  Once you have initialized a budget file, you can begin adding categories.
+
+ bgt --catt Rent
+ Created cat 1 named 'Rent'
+
+ bgt --catt Groceries
+ Created cat 2 named 'Groceries'
+
+ bgt --catt Entertainment
+ Created cat 3 named 'Entertainment'
+
+ bgt --catt AutoFuel
+ Created cat 4 named 'AutoFuel'
+
+ bgt --catt AutoInsurance
+ Created cat 5 named 'AutoInsurance'
+
+ bgt --catt Utilities
+ Created cat 6 named 'Utilities'
+
+ bgt --catt Savings
+ Created cat 7 named 'Savings'
+
+ bgt --catt Miscellaneous
+ Created cat 8 named 'Miscellaneous'
+
+The next step is to set initial balances so that your categories have money in them.  Say you have $1,215.25 in your checking account,
+and you know that Rent is coming due in a few days.  You might divide out the money as follows:
+
+ bgt --add --amt 650.00 --catt Rent --to 'Initialize' --cmt 'Initialize the Rent account.'
+ Journalized 650.00 for the 1 category.
+
+ bgt --add --amt 100.00 --catt Groceries --to 'Initialize' --cmt 'Initialize the Groceries account.'
+ Journalized 100.00 for the 2 category.
+
+ bgt --add --amt 100.00 --catt AutoInsurance --to 'Initialize' --cmt 'Initialize the AutoInsurance account.'
+ Journalized 100.00 for the 5 category.
+
+ bgt --add --amt 50.00 --catt AutoFuel --to 'Initialize' --cmt 'Initialize the AutoInsurance account.'
+ Journalized 50.00 for the 4 category.
+
+ tbgt --add --amt 100.00 --catt Entertainment --to 'Initialize' --cmt 'Initialize the Entertainment account.'
+ Journalized 100.00 for the 3 category.
+
+ bgt --add --amt 150.00 --catt Utilities --to 'Initialize' --cmt 'Initialize the Utilities account.'
+ Journalized 150.00 for the 6 category.
+
+ bgt --add --amt 65.00 --catt Savings --to 'Initialize' --cmt 'Initialize the Savings account.'
+ Journalized 65.00 for the 7 category.
+
+ bgt --add --amt 0.25 --catt Miscellaneous --to 'Initialize' --cmt 'Initialize the Miscellaneous account.'
+ Journalized 0.25 for the 8 category.
+
+Finally, use the --ls switch to post what you have done and display the data.
+
+ bgt --ls
+ Posted 8 transactions to 8 categories
+ ==========================================================================================
+ Category    Date/Time             Name                                    Amount
+ 1           2011-03-16 17:35:14   Rent                                              650.00
+ 2           2011-03-16 17:35:19   Groceries                                         100.00
+ 3           2011-03-16 17:35:25   Entertainment                                     100.00
+ 4           2011-03-16 17:35:30   AutoFuel                                           50.00
+ 5           2011-03-16 17:35:33   AutoInsurance                                     100.00
+ 6           2011-03-16 17:35:39   Utilities                                         150.00
+ 7           2011-03-16 17:35:45   Savings                                            65.00
+ 8           2011-03-16 17:35:51   Miscellaneous                                        .25
+ ==========================================================================================
+                                                                    Total:          1215.25
+ ==========================================================================================
+
+Then, say, you write a check for Rent for 645.00.  You would do the following:
+
+ bgt --add --amt -645.00 --catt Rent --to 'Landlord' --cmt 'Check #888, 3/1/2011; Pay rent.'
+ Journalized -645.00 for the 1 category.
+
+ bgt --ls
+ Posted 1 transactions to 8 categories
+ ==========================================================================================
+ Category    Date/Time             Name                                    Amount
+ 1           2011-03-16 17:35:14   Rent                                                5.00
+ 2           2011-03-16 17:35:19   Groceries                                         100.00
+ 3           2011-03-16 17:35:25   Entertainment                                     100.00
+ 4           2011-03-16 17:35:30   AutoFuel                                           50.00
+ 5           2011-03-16 17:35:33   AutoInsurance                                     100.00
+ 6           2011-03-16 17:35:39   Utilities                                         150.00
+ 7           2011-03-16 17:35:45   Savings                                            65.00
+ 8           2011-03-16 17:35:51   Miscellaneous                                        .25
+ ==========================================================================================
+                                                                    Total:           570.25
+ ==========================================================================================
+
+Finally, say you then get paid.  You receive $1,328.18.  You can use the following sequence to enter that into your budget:
+
+ bgt --add --amt 350.00 --catt Rent --to 'Salary' --cmt 'Salary - Rent.'
+ Journalized 350.00 for the 1 category.
+ bgt --add --amt 300.00 --catt Groceries --to 'Salary' --cmt 'Salary - Groceries.'
+ Journalized 300.00 for the 2 category.
+ bgt --add --amt 103.00 --catt Entertainment --to 'Salary' --cmt 'Salary - Entertainment.'
+ Journalized 103.00 for the 3 category.
+ bgt --add --amt 100.00 --catt AutoFuel --to 'Salary' --cmt 'Salary - AutoFuel.'
+ Journalized 100.00 for the 4 category.
+ bgt --add --amt 150.00 --catt AutoInsurance --to 'Salary' --cmt 'Salary - AutoInsurance.'
+ Journalized 150.00 for the 5 category.
+ bgt --add --amt 200.00 --catt Utilities --to 'Salary' --cmt 'Salary - Utilities.'
+ Journalized 200.00 for the 6 category.
+ bgt --add --amt 125.00 --catt Savings --to 'Salary' --cmt 'Salary - Savings.'
+ Journalized 125.00 for the 7 category.
+ bgt --add --amt 0.18 --catt Miscellaneous --to 'Salary' --cmt 'Salary - Miscellaneous.'
+ Journalized 0.18 for the 8 category.
+
+ bgt --ls
+ Posted 8 transactions to 8 categories
+ ==========================================================================================
+ Category    Date/Time             Name                                    Amount
+ 1           2011-03-16 17:35:14   Rent                                              355.00
+ 2           2011-03-16 17:35:19   Groceries                                         400.00
+ 3           2011-03-16 17:35:25   Entertainment                                     203.00
+ 4           2011-03-16 17:35:30   AutoFuel                                          150.00
+ 5           2011-03-16 17:35:33   AutoInsurance                                     250.00
+ 6           2011-03-16 17:35:39   Utilities                                         350.00
+ 7           2011-03-16 17:35:45   Savings                                           190.00
+ 8           2011-03-16 17:35:51   Miscellaneous                                        .43
+ ==========================================================================================
+                                                                    Total:          1898.43
+ ==========================================================================================
+
+You make sure every step along the way that your bgt balance matches that of your checking account,
+and you know at all times how much money you have to apply towards expenses.  Consider the
+advantage here.  If, for example, you didn't do a budget but you kept a check book up to date,
+you would know that you have $1,898.43.  So, if you wanted to go out and have fun, you could spend
+$250 or $300 dollars, no problem, right?  Wrong!  You only have $203 in Entertainment, and that's how
+much you can spend.  Exercising a budget with discipline over time will help you save and make
+sure that you are paying your bills on time.
+
+=head1 EXIT STATUS
+
+B<0> Success
+
+B<-1> Failure.  Great effort has been made to insure that a meaningful error message gets printed when an error condition is returned.
+
+=head1 AUTHOR
+
+David F. May
+
+dmay at cnm dot edu
+
+=head1 COPYRIGHT
+
+The bgt program is free software under the GPL v.2 license only.  See the Copying file
+for more detail.
+

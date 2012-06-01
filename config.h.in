@@ -1,0 +1,190 @@
+/* Header File: config.h */
+
+/*
+ * Copyright 2011 David F. May
+ * 
+ * This software is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; version
+ * 2 of the License only.  See the file Copying at the top of
+ * the distribution for more information.
+ * 
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ * You can contact me at dmay at cnm dot edu.
+ *
+ * $Id: config.h.in,v 0.1 2011/03/16 16:34:02 dfmay Exp dfmay $
+ *
+ * $Log: config.h.in,v $
+ * Revision 0.1  2011/03/16 16:34:02  dfmay
+ * This is the first functional version of the config.h header file.
+ *
+ *
+ */
+
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
+/* Define to 1 if you have `alloca', as a function or macro. */
+#cmakedefine HAVE_ALLOCA ${HAVE_ALLOCA}
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix). */
+#cmakedefine HAVE_ALLOCA_H ${HAVE_ALLOCA_H}
+
+/* Define to 1 if you have the <dir.h> header file. */
+#cmakedefine HAVE_DIR_H ${HAVE_DIR_H}
+
+/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+#cmakedefine HAVE_DOPRNT ${HAVE_DOPRNT}
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#cmakedefine HAVE_FCNTL_H ${HAVE_FCNTL_H}
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H ${HAVE_INTTYPES_H}
+
+/* Define to 1 if you have the <io.h> header file. */
+#cmakedefine HAVE_IO_H ${HAVE_IO_H}
+
+/* Define to 1 if you have the <libintl.h> header file. */
+#cmakedefine HAVE_LIBINTL_H ${HAVE_LIBINTL_H}
+
+/* Define to 1 if you have the `ssl' library (-lssl). */
+#cmakedefine HAVE_LIBSSL ${HAVE_LIBSSL}
+
+/* Define to 1 if you have the <locale.h> header file. */
+#cmakedefine HAVE_LOCALE_H ${HAVE_LOCALE_H}
+
+/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+   to 0 otherwise. */
+#cmakedefine HAVE_MALLOC ${HAVE_MALLOC}
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#cmakedefine HAVE_MALLOC_H ${HAVE_MALLOC_H}
+
+/* Define to 1 if you have the `memmove' function. */
+#cmakedefine HAVE_MEMMOVE ${HAVE_MEMMOVE}
+
+/* Define to 1 if you have the <memory.h> header file. */
+#cmakedefine HAVE_MEMORY_H ${HAVE_MEMORY_H}
+
+/* Define to 1 if you have the `memset' function. */
+#cmakedefine HAVE_MEMSET ${HAVE_MEMSET}
+
+/* Define to 1 if your system has a GNU libc compatible `realloc' function,
+   and to 0 otherwise. */
+#cmakedefine HAVE_REALLOC ${HAVE_REALLOC}
+
+/* Define to 1 if you have the `snprintf' function. */
+#cmakedefine HAVE_SNPRINTF ${HAVE_SNPRINTF}
+
+/* Define to 1 if you have the `strncpy' function. */
+#cmakedefine HAVE_STRNCPY ${HAVE_STRNCPY}
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#cmakedefine HAVE_STDDEF_H ${HAVE_STDDEF_H}
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H ${HAVE_STDINT_H}
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H ${HAVE_STDLIB_H}
+
+/* Define to 1 if you have the `strcasecmp' function. */
+#cmakedefine HAVE_STRCASECMP ${HAVE_STRCASECMP}
+
+/* Define to 1 if you have the `strchr' function. */
+#cmakedefine HAVE_STRCHR ${HAVE_STRCHR}
+
+/* Define to 1 if you have the `strdup' function. */
+#cmakedefine HAVE_STRDUP ${HAVE_STRDUP}
+
+/* Define to 1 if you have the `strerror' function. */
+#cmakedefine HAVE_STRERROR ${HAVE_STRERROR}
+
+/* Define to 1 if you have the <strings.h> header file. */
+#cmakedefine HAVE_STRINGS_H ${HAVE_STRINGS_H}
+
+/* Define to 1 if you have the <string.h> header file. */
+#cmakedefine HAVE_STRING_H ${HAVE_STRING_H}
+
+/* Define to 1 if you have the `strlwr' function. */
+#cmakedefine HAVE_STRLWR ${HAVE_STRLWR}
+
+/* Define to 1 if you have the `strrchr' function. */
+#cmakedefine HAVE_STRRCHR ${HAVE_STRRCHR}
+
+/* Define to 1 if you have the `strstr' function. */
+#cmakedefine HAVE_STRSTR ${HAVE_STRSTR}
+
+/* Define to 1 if you have the `strtol' function. */
+#cmakedefine HAVE_STRTOL ${HAVE_STRTOL}
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H ${HAVE_SYS_STAT_H}
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#cmakedefine HAVE_SYS_TIME_H ${HAVE_SYS_TIME_H}
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H ${HAVE_SYS_TYPES_H}
+
+/* Define to 1 if you have the <time.h> header file. */
+#cmakedefine HAVE_TIME_H ${HAVE_TIME_H}
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H ${HAVE_UNISTD_H}
+
+/* Define to 1 if you have the `vprintf' function. */
+#cmakedefine HAVE_VPRINTF ${HAVE_VPRINTF}
+
+/* Define to 1 if you have the `readline' function. */
+#cmakedefine HAVE_READLINE ${HAVE_READLINE}
+
+/* Define to 1 if you have the <wchar.h> header file. */
+#cmakedefine HAVE_WCHAR_H ${HAVE_WCHAR_H}
+
+/* Define to 1 if you have the <pthread.h> header file. */
+#cmakedefine HAVE_PTHREAD_H ${HAVE_PTHREAD_H}
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#cmakedefine HAVE_GETOPT_H ${HAVE_GETOPT_H}
+
+/* Define to 1 if you have the <ctype.h> header file. */
+#cmakedefine HAVE_CTYPE_H ${HAVE_CTYPE_H}
+
+/* Define to 1 if you have the <readline/readline.h> header file. */
+#cmakedefine HAVE_READLINE_H ${HAVE_CTYPE_H}
+
+/* Define to 1 if you have the ANSI C header files. */
+#cmakedefine STDC_HEADERS ${STDC_HEADERS}
+
+/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+#cmakedefine TM_IN_SYS_TIME ${TM_IN_SYS_TIME}
+
+/* Compile with large file system 64 */
+#cmakedefine WITH_LFS64 ${WITH_LFS64}
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#cmakedefine const ${const}
+
+/* Define to rpl_malloc if the replacement function should be used. */
+#cmakedefine malloc ${malloc}
+
+/* Define to `long' if <sys/types.h> does not define. */
+#cmakedefine off_t ${off_t}
+
+/* Define to rpl_realloc if the replacement function should be used. */
+#cmakedefine realloc ${realloc}
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#cmakedefine size_t ${size_t}
+
+#endif /* __CONFIG__ */

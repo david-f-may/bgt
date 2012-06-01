@@ -1,0 +1,20 @@
+This is the bgt program.  It allows the user to create and maintain a budget simply using only the command-line.
+It is relatively easy to use and to master, being built on simple concepts that can be understood quickly.
+
+To build the bgt program, do the following in the source directory:
+
+cmake .
+make
+
+That should create a program named bgt.  Copy that program somewhere that is accessible in your path, and you
+are ready to go.
+
+Do the following to read the man page:
+
+nroff -man bgt.1 |less
+
+Or, copy bgt.1 to a man directory and man will find it automatically, like this:
+
+man bgt.1
+
+Enjoy.
