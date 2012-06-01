@@ -28,9 +28,12 @@
 /*
  * Version information
  *
- * $Id: bgt.c,v 0.10 2011/11/29 19:31:02 dfmay Exp dfmay $
+ * $Id: bgt.c,v 0.10.1.1 2012/06/01 21:56:41 dfmay Exp dfmay $
  *
  * $Log: bgt.c,v $
+ * Revision 0.10.1.1  2012/06/01 21:56:41  dfmay
+ * This version contains the --tot command-line switch.
+ *
  * Revision 0.10  2011/11/29 19:31:02  dfmay
  * Fixed some bugs.
  *
@@ -252,7 +255,7 @@ typedef struct _optObject {
   int is_cat;
   int cat;
   int is_catt;
-  char catt[FIELD_ARB+1];;
+  char catt[FIELD_ARB+1];
   int is_tran;
   int tran;
   int is_ls;
@@ -291,6 +294,9 @@ typedef struct _optObject {
   int is_csv;
   int is_nclr;
   char nclr[SIZE_ARB+1];
+  int is_tot;
+  int is_quiet;
+  char tot[FIELD_ARB+1];
   int is_qif;
   char qif[SIZE_ARB+1];
 } optObject;
@@ -1425,7 +1431,8 @@ static int do_post (int recalc)
     return -1;
   }
   if (c_head == 0 || c_tail == 0 || c_head->next == c_tail || c_tail->prev == c_head) {
-    printf ("\nNothing to post.\n");
+    if (! opt->is_quiet)
+      printf ("\nNothing to post.\n");
     del_cb_data();
     return 0;
   }
@@ -1455,6 +1462,7 @@ static int do_post (int recalc)
     }
   }
   /* now, update the categories with the data that was entered */
+  // BUGBUG - fix this so it only posts what has been changed.
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
@@ -1467,7 +1475,8 @@ static int do_post (int recalc)
       return ret;
     }
   }
-  printf ("Posted %d transactions to %d categories\n", num_trans, num_cats);
+  if (! opt->is_quiet)
+    printf ("Posted %d transactions to %d categories\n", num_trans, num_cats);
   return 0;
 }
 
@@ -1620,17 +1629,31 @@ static int do_ls (void)
     if (ret)
       return ret;
   }
+  if (opt->is_tot && ! opt->is_catt) {
+    printf ("\n***Error in do_ls(), line %d: Need --catt CAT with --ls --tot\n", __LINE__);
+    return (-1);
+  }
 
-  strcpy (tot, "0.00");
-  printf ("==========================================================================================\n");
-  printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
-  printf ("------------------------------------------------------------------------------------------\n");
+  if (! opt->is_tot) {
+    strcpy (tot, "0.00");
+    printf ("==========================================================================================\n");
+    printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+    printf ("------------------------------------------------------------------------------------------\n");
+  }
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
-    printf ("%-12d%-22s%-40s%16s\n", opt->catList[i].cat, opt->catList[i].dtime, opt->catList[i].name, opt->catList[i].amt);
-    cp = bcnum_add (tot, opt->catList[i].amt, 2);
-    strncpy (tot, cp, SIZE_AMT);
+    if (! opt->is_tot) {
+      printf ("%-12d%-22s%-40s%16s\n", opt->catList[i].cat, opt->catList[i].dtime, opt->catList[i].name, opt->catList[i].amt);
+      cp = bcnum_add (tot, opt->catList[i].amt, 2);
+      strncpy (tot, cp, SIZE_AMT);
+    }
+    else {
+      if (! strcmp (opt->catList[i].name, opt->catt)) {
+        printf ("%s\n", opt->catList[i].amt);
+        return 0;
+      }
+    }
   }
   printf ("==========================================================================================\n");
   printf ("                                                                   Total: %16s\n", tot);
@@ -2763,7 +2786,7 @@ static int do_csv (void)
     }
   }
   if (c_head == 0 || c_tail == 0 || c_head->next == c_tail || c_tail->prev == c_head) {
-    printf ("\nNothing to consider.\n");
+      printf ("\nNothing to consider.\n");
     del_cb_data();
     return 0;
   }
@@ -3041,6 +3064,7 @@ int main (int argc, char *argv[])
     {"scr",        0, 0, 'o'},
     {"csv",        0, 0, 'v'},
     {"nclr",       1, 0, 'P'},
+    {"tot",        0, 0, 'O'},
     {"qif",        1, 0, 'Q'},
     {"help",       0, 0, 'h'},
     {0,0,0,0}
@@ -3053,8 +3077,8 @@ int main (int argc, char *argv[])
     goto CleanupAndQuit;
   }
   memset (opt, 0, sizeof(optObject));
-  opterr = 0; /* tell getopt() to hush */
-  while ( (ch = getopt_long (argc, argv, "b:c:C:t:laT:A:m:dGersjR:S:q:LHpxNnB:E:ovPQ:h", long_options, &option_index)) != EOF) {
+  opterr = 1; /* tell getopt() to hush */
+  while ( (ch = getopt_long (argc, argv, "b:c:C:t:laT:A:m:dGersjR:S:q:LHpxNnB:E:ovPOQ:h", long_options, &option_index)) != EOF) {
     switch (ch) {
       case 'b': /* --bgt */
         opt->is_bgt = TRUE;
@@ -3156,6 +3180,10 @@ int main (int argc, char *argv[])
       case 'P': /* --nclr */
         opt->is_nclr = TRUE;
         strncpy (opt->nclr, optarg, SIZE_ARB);
+        break;
+      case 'O': /* --tot */
+        opt->is_tot = TRUE;
+        opt->is_quiet = TRUE;
         break;
       case 'Q': /* --qif */
         opt->is_qif = TRUE;
@@ -3313,7 +3341,7 @@ int main (int argc, char *argv[])
     }
   }
 
-  if (opt->is_catt && ! opt->is_add) {
+  if (opt->is_catt && ! opt->is_add && ! opt->is_ls && ! opt->is_tot) {
     ret = do_new_cat ();
     goto CleanupAndQuit;
   }
