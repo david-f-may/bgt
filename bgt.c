@@ -1958,7 +1958,7 @@ static int do_edit (void)
     printf ("\n***Error in do_edit(), line %d: Must specify a transaction number\n", __LINE__);
     return -1;
   }
-  if (!opt->is_to && !opt->is_amt && !opt->is_cat && !opt->is_cmt) {
+  if (!opt->is_to && !opt->is_amt && !opt->is_cat && !opt->is_catt && !opt->is_cmt) {
     printf ("\n***Error in do_edit(), line %d: User must specify something to change for transaction %d\n", __LINE__, opt->tran);
     return -1;
   }
@@ -3341,7 +3341,7 @@ int main (int argc, char *argv[])
     }
   }
 
-  if (opt->is_catt && ! opt->is_add && ! opt->is_ls && ! opt->is_tot) {
+  if (opt->is_catt && ! opt->is_add && ! opt->is_ls && ! opt->is_tot && ! opt->is_edit) {
     ret = do_new_cat ();
     goto CleanupAndQuit;
   }
