@@ -28,9 +28,18 @@
 /*
  * Version information
  *
- * $Id: bgt.c,v 0.10.1.1 2012/06/01 21:56:41 dfmay Exp dfmay $
+ * $Id: bgt.c,v 0.10.1.4 2012/07/08 00:46:17 dfmay Exp dfmay $
  *
  * $Log: bgt.c,v $
+ * Revision 0.10.1.4  2012/07/08 00:46:17  dfmay
+ * This version provides a validation for the data provided by --date.
+ *
+ * Revision 0.10.1.3  2012/07/08 00:11:24  dfmay
+ * This version contains the --date command.
+ *
+ * Revision 0.10.1.2  2012/07/07 23:41:59  dfmay
+ * This version implements a quiet option and only updates the date on categories that are changed.
+ *
  * Revision 0.10.1.1  2012/06/01 21:56:41  dfmay
  * This version contains the --tot command-line switch.
  *
@@ -201,7 +210,8 @@
  * *--catt 'CATNAME'
  * *--cat 'CATNUM'
  * *--ls
- * *--add --cat 'CATNUM' --to 'TO_WHOM' --amt 'HOW_MUCH' --cmt 'COMMENT'
+ * *--add --cat 'CATNUM' --to 'TO_WHOM' --date 'DATE_STR' --amt 'HOW_MUCH' \
+ *        --cmt 'COMMENT'
  * --ced --cat 'CATNUM' --catt 'NEW_CATEGORY_NAME'
  * *--edit --tran 'TRAN_NUM' [--to 'TO_WHOM'] [--amt 'HOW_MUCH] [--cmt 'COMMENT] \
  *        [--cat 'CATNUM']
@@ -292,6 +302,8 @@ typedef struct _optObject {
   int end;
   int is_scr;
   int is_csv;
+  int is_date;
+  char date[FIELD_ARB+1];
   int is_nclr;
   char nclr[SIZE_ARB+1];
   int is_tot;
@@ -361,7 +373,9 @@ typedef struct _qif_item {
 "\n"
 "--add The --add switch adds a transaction.  There are four items necessary when you add a\n"
 "  transaction.  The category (either specified using --catt or --cat), the amount (specified\n"
-"  using --amt), the to field (specified using --to) and a comment (specified using --cmt).\n"
+"  using --amt), the to-field (specified using --to) and a comment (specified using --cmt).\n"
+"  If you specify --date 'DATE_STR' to add, the date you specify will be entered rather than\n"
+"  now.\n"
 "\n"
 "--edit The --edit switch allows the user to edit a transaction (an entry) by transaction id\n"
 "  (using the --tran switch).  Anything specified on the command-line, up to and including all\n"
@@ -1284,8 +1298,15 @@ static int do_add (void)
   if (tran_num == -1)
     return -1;
 
-  snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO tran VALUES (%d,%d,datetime('now','localtime'),'%s','NPST','%s','%s');\nCOMMIT;\n",
-      tran_num, cat, opt->amt, opt->to, opt->cmt);
+  if (opt->is_date) {
+    opt->date[SIZE_TSTMP] = '\0';
+    snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO tran VALUES (%d,%d,'%s','%s','NPST','%s','%s');\nCOMMIT;\n",
+        tran_num, cat, opt->date, opt->amt, opt->to, opt->cmt);
+  }
+  else {
+    snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO tran VALUES (%d,%d,datetime('now','localtime'),'%s','NPST','%s','%s');\nCOMMIT;\n",
+        tran_num, cat, opt->amt, opt->to, opt->cmt);
+  }
   ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
   if (ret != SQLITE_OK) {
     printf ("\n\n***Error in do_add(), line %d: SQLite Error entering '%s': %s\n", __LINE__, tmp, errmsg);
@@ -1293,8 +1314,15 @@ static int do_add (void)
     ret = -1;
     return ret;
   }
-  snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO act VALUES ('TRN',%d,%d,datetime('now','localtime'),'%s','%s','%s');\nCOMMIT;\n",
-      cat, tran_num, opt->amt, opt->to, opt->cmt);
+  if (opt->is_date) {
+    opt->date[SIZE_TSTMP] = '\0';
+    snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO act VALUES ('TRN',%d,%d,'%s','%s','%s','%s');\nCOMMIT;\n",
+        cat, tran_num, opt->date, opt->amt, opt->to, opt->cmt);
+  }
+  else {
+    snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO act VALUES ('TRN',%d,%d,datetime('now','localtime'),'%s','%s','%s');\nCOMMIT;\n",
+        cat, tran_num, opt->amt, opt->to, opt->cmt);
+  }
   ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
   if (ret != SQLITE_OK) {
     printf ("\n\n***Error in do_add(), line %d: SQLite Error entering '%s': %s\n", __LINE__, tmp, errmsg);
@@ -1378,6 +1406,7 @@ static int do_post (int recalc)
   char tmp[SIZE_ARB+1];
   char *cp;
   tran_dat *td;
+  int cat_ary[MD_ARY];
 
   /* first, grab everything from the cat table that we need and populate opt->catList */
   snprintf (tmp, SIZE_ARB, "SELECT num,dtime,name,amt FROM cat ORDER BY num;");
@@ -1443,6 +1472,8 @@ static int do_post (int recalc)
     del_cb_data();
     return -1;
   }
+  for (i = 0; i < MD_ARY; i++)
+    cat_ary[i] = 0;
   for (c = c_head->next; c != c_tail; c = c->next) {
     memset (td, 0, sizeof(tran_dat));
     td->num = atoi (c->item[0]);
@@ -1460,11 +1491,13 @@ static int do_post (int recalc)
       ret = -1;
       return ret;
     }
+    cat_ary[td->cat_num] = 1;
   }
   /* now, update the categories with the data that was entered */
-  // BUGBUG - fix this so it only posts what has been changed.
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
+      continue;
+    if (cat_ary[i] == 0)
       continue;
     snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nUPDATE cat SET amt = '%s',dtime=datetime('now','localtime') WHERE num = %d;\nCOMMIT;\n", opt->catList[i].amt, opt->catList[i].cat);
     ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
@@ -2594,9 +2627,9 @@ static int do_scr (void)
     if (c->item[0]) {
       printf ("# tran '%s', dtime '%s', status '%s'\n", c->item[0], c->item[2], c->item[4]);
       if (is_bgt == TRUE)
-        printf ("bgt %s --add --catt '%s' --amt '%s' --to '%s' --cmt '%s'\n", bgt, c->item[1], c->item[3], c->item[5], c->item[6]);
+        printf ("bgt %s --add --catt '%s' --date '%s' --amt '%s' --to '%s' --cmt '%s'\n", bgt, c->item[1], c->item[2], c->item[3], c->item[5], c->item[6]);
       else
-        printf ("bgt --add --catt '%s' --amt '%s' --to '%s' --cmt '%s'\n", c->item[1], c->item[3], c->item[5], c->item[6]);
+        printf ("bgt --add --catt '%s' --date '%s' --amt '%s' --to '%s' --cmt '%s'\n", c->item[1], c->item[2], c->item[3], c->item[5], c->item[6]);
     }
   }
   del_cb_data();
@@ -3063,6 +3096,7 @@ int main (int argc, char *argv[])
     {"end",        1, 0, 'E'},
     {"scr",        0, 0, 'o'},
     {"csv",        0, 0, 'v'},
+    {"date",       1, 0, 'D'},
     {"nclr",       1, 0, 'P'},
     {"tot",        0, 0, 'O'},
     {"qif",        1, 0, 'Q'},
@@ -3078,7 +3112,7 @@ int main (int argc, char *argv[])
   }
   memset (opt, 0, sizeof(optObject));
   opterr = 1; /* tell getopt() to hush */
-  while ( (ch = getopt_long (argc, argv, "b:c:C:t:laT:A:m:dGersjR:S:q:LHpxNnB:E:ovPOQ:h", long_options, &option_index)) != EOF) {
+  while ( (ch = getopt_long (argc, argv, "b:c:C:t:laT:A:m:dGersjR:S:q:LHpxNnB:E:ovDPOQ:h", long_options, &option_index)) != EOF) {
     switch (ch) {
       case 'b': /* --bgt */
         opt->is_bgt = TRUE;
@@ -3180,6 +3214,30 @@ int main (int argc, char *argv[])
       case 'P': /* --nclr */
         opt->is_nclr = TRUE;
         strncpy (opt->nclr, optarg, SIZE_ARB);
+        break;
+      case 'D': /* --date */
+        opt->is_date = TRUE;
+        strncpy (opt->date, optarg, FIELD_ARB);
+        {
+          char *cp = optarg;
+          int len = strlen (optarg);
+          if (len > SIZE_TSTMP) {
+            printf ("\n***Warning in main(), line %d: invalid date '%s' in command-line option: too long\n", __LINE__, optarg);
+            opt->is_date = FALSE;
+            opt->date[0] = '\0';
+            break;
+          }
+          len = 0;
+          while (cp[len] != '\0' && len < SIZE_TSTMP) {
+            if (! isdigit (cp[len]) && cp[len] != '-' && cp[len] != ' ' && cp[len] != ':') {
+              printf ("\n***Warning in main(), line %d: invalid date '%s' in command-line option: too long\n", __LINE__, optarg);
+              opt->is_date = FALSE;
+              opt->date[0] = '\0';
+              break;
+            }
+            len++;
+          }
+        }
         break;
       case 'O': /* --tot */
         opt->is_tot = TRUE;
