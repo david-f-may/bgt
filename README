@@ -12,6 +12,7 @@ are ready to go.
 
 Do the following to read the man page:
 
+pod2man bgt.pod > bgt.1
 nroff -man bgt.1 |less
 
 Or, copy bgt.1 to a man directory and man will find it automatically, like this:
