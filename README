@@ -3,6 +3,7 @@ It is relatively easy to use and to master, being built on simple concepts that 
 
 To build the bgt program, do the following in the source directory:
 
+export CFLAGS="-O2 -s -D_LARGE_SOURCE -D_FILE_OFFSET_BITS=64"
 cmake .
 make
 
@@ -15,6 +16,6 @@ nroff -man bgt.1 |less
 
 Or, copy bgt.1 to a man directory and man will find it automatically, like this:
 
-man bgt.1
+man bgt
 
 Enjoy.
