@@ -38,7 +38,7 @@ Groceries, you would subtract 32 dollars from your Groceries category.
 
  Options for specifying criteria
 
-  --bgt 'BGT_FL_NM'
+  --bgt 'BGT_PATH'
   --catt 'CATNAME'
   --cat 'CATNUM'
   --amt 'AMT'
@@ -47,6 +47,8 @@ Groceries, you would subtract 32 dollars from your Groceries category.
   --tran 'TRANNUM'
   --beg 'BEG_TRAN'
   --end 'END_TRAN'
+  --tot
+  --date
   --help
 
 B<--ls> The --ls switch causes bgt to post any outstanding (unposted) transactions and generate
@@ -103,7 +105,7 @@ those that have a to field like 'adjust'.
 B<--scr> The --scr switch generates the commands necessary to recreate the transactions in the bgt.db tran
 table.  This includes the value of the --bgt switch, if any.
 
-B<--arch> The --arch switch archieves all the transactions in the tran table.  Then, it recreates enough
+B<--arch> The --arch switch archives all the transactions in the tran table.  Then, it recreates enough
 transactions to reset the balances of the categories to what they were before the archiving occurred.  This
 allows the user to keep their transaction table cleaned out of old stuff.  It is not necessary to do an
 archive, but it is available should someone want to use it.
@@ -151,6 +153,20 @@ B<--end 'END_TRAN'> The --beg and --end switches allow the user to specify a ran
 a valid --beg, then the operation being requested (like --exp, --inc, or --net) will go from that beginning to the last
 transaction.  If you specify --end, the operation will go from the beginning of the transactions to that one, inclusive.
 If you specify both, the operation will only include the beginning, the end, and all the ones in between.
+
+B<--tot> The --tot switch allows the user to get the total of a single category.  Use it as follows:
+
+  bgt --ls --tot --catt 'AutoFuel'
+
+This will give you the total amount of money in the AutoFuel category.
+
+B<--date> The --date switch allows you to specify a timestamp different than one that represents now.  The format is
+
+  YYYY-MM-DD HH:MM:SS
+
+You can get the same results with the following date command:
+
+  date '+%Y-%m-%d %H:%M:%S'
 
 B<--help> This generates a help screen.
 
