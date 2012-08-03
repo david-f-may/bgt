@@ -113,10 +113,6 @@
  * - I would allow the users to archive transactions into an archive table.
  * - I would allow split transactions, where the user entered a final amount, and the
  *   program allowed the user to enter partial amounts up to the full amount.
- * - I would allow the user to enter adjustment transactions that could be used to
- *   move money from one category to another.  The adjustment transactions would only
- *   allow whole dollar amounts.  The syntax would be something like
- *   --adj --from cat --to cat --amt NUM.
  * ================================================================================
  */
 
@@ -210,9 +206,9 @@
  * *--catt 'CATNAME'
  * *--cat 'CATNUM'
  * *--ls
- * *--add --cat 'CATNUM' --to 'TO_WHOM' --date 'DATE_STR' --amt 'HOW_MUCH' \
- *        --cmt 'COMMENT'
- * --ced --cat 'CATNUM' --catt 'NEW_CATEGORY_NAME'
+ * *--add --cat 'CATNUM' --to 'TO_WHOM' --date 'YYYY-MM-DD HH:MM:SS' \
+ *        --amt 'HOW_MUCH' --cmt 'COMMENT'
+ * --cedit --cat 'CATNUM' --catt 'NEW_CATEGORY_NAME'
  * *--edit --tran 'TRAN_NUM' [--to 'TO_WHOM'] [--amt 'HOW_MUCH] [--cmt 'COMMENT] \
  *        [--cat 'CATNUM']
  * *--rm --tran 'TRAN_NUM'
@@ -276,7 +272,7 @@ typedef struct _optObject {
   char amt[SIZE_AMT+1];
   int is_cmt;
   char cmt[FIELD_ARB+1];
-  int is_ced;
+  int is_cedit;
   int is_crm;
   char crm[FIELD_ARB+1];
   int is_edit;
@@ -379,7 +375,7 @@ typedef struct _qif_item {
 "\n"
 "--edit The --edit switch allows the user to edit a transaction (an entry) by transaction id\n"
 "  (using the --tran switch).  Anything specified on the command-line, up to and including all\n"
-"  four of --amt, --to, --cat (or --catt), and/or --cmt, are changed on the transaction.\n"
+"  five of --amt, --to, --cat (or --catt), --date, and/or --cmt, are changed on the transaction.\n"
 "\n"
 "--rm The --rm switch allows the user to remove a transaction.  A copy is made of the transaction\n"
 "  in the archive table and it is removed from the tran table.  A recalc is forced after a transaction\n"
@@ -1382,6 +1378,59 @@ static int do_new_cat (void)
   return 0;
 }
 
+/*
+ * do_cedit
+ *
+ * This function allows the user to edit a category.
+ */
+#if 0
+static int do_cedit (void)
+{
+  int ret;
+  int new_cat;
+  char *errmsg = 0;
+  char tmp[SIZE_ARB+1];
+  char tmp1[SIZE_ARB+1];
+
+  if (! opt->is_cat) {
+    printf ("\n***Error in do_cedit (), line %d: Called without --cat having been entered.\n", __LINE__);
+    return -1;
+  }
+  if (opt->is_catt) {
+    ret = get_cat_num_from_name (opt->catt);
+    if (ret != -1) {
+      printf ("\n***Error in do_cedit(), line %d: Trying to update a category with a name that already exists: '%s'\n", __LINE__, opt->catt);
+      return -1;
+    }
+  }
+  // FIXME
+  // Continue here
+  // FIXME
+  snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO cat VALUES (%d, datetime('now','localtime'), '%s', '0.00', '%s');\nCOMMIT;\n", new_cat, opt->catt,
+      (opt->is_cmt ? opt->cmt : "Create a new Category."));
+  ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
+  if (ret != SQLITE_OK) {
+    printf ("\n\n***Error in do_cedit(), line %d: SQLite Error entering '%s': %s\n", __LINE__, tmp, errmsg);
+    sqlite3_free (errmsg);
+    ret = -1;
+    return ret;
+  }
+  snprintf (tmp1, SIZE_ARB, "Add cat %d, %s", new_cat, opt->catt);
+  snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO act VALUES ('CAT',%d,NULL,datetime('now','localtime'),NULL,'%s','%s');\nCOMMIT;\n", 
+      new_cat, opt->catt, tmp1);
+  ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
+  if (ret != SQLITE_OK) {
+    printf ("\n\n***Error in do_cedit(), line %d: SQLite Error entering '%s': %s\n", __LINE__, tmp, errmsg);
+    sqlite3_free (errmsg);
+    ret = -1;
+    return ret;
+  }
+  snprintf (tmp1, SIZE_ARB, "Updated cat %d named '%s'\n", new_cat, opt->catt);
+  printf ("%s\n", tmp1);
+  return 0;
+}
+#endif
+
 typedef struct _tran_dat {
   int num;
   int cat_num;
@@ -1991,7 +2040,7 @@ static int do_edit (void)
     printf ("\n***Error in do_edit(), line %d: Must specify a transaction number\n", __LINE__);
     return -1;
   }
-  if (!opt->is_to && !opt->is_amt && !opt->is_cat && !opt->is_catt && !opt->is_cmt) {
+  if (!opt->is_to && !opt->is_amt && !opt->is_cat && !opt->is_catt && !opt->is_cmt && !opt->is_date) {
     printf ("\n***Error in do_edit(), line %d: User must specify something to change for transaction %d\n", __LINE__, opt->tran);
     return -1;
   }
@@ -2084,6 +2133,26 @@ static int do_edit (void)
       return ret;
     }
   }
+  if (opt->is_date) {
+    snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nUPDATE tran SET dtime = '%s' WHERE num = %d;\nCOMMIT;\n", opt->date, opt->tran);
+    ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
+    if (ret != SQLITE_OK) {
+      printf ("\n\n***Error in do_edit(), line %d: SQLite Error entering '%s': %s\n", __LINE__, tmp, errmsg);
+      sqlite3_free (errmsg);
+      ret = -1;
+      return ret;
+    }
+    snprintf (tmp, SIZE_ARB, "BEGIN TRANSACTION;\nINSERT INTO act VALUES ('EDT',NULL,%d,datetime('now','localtime'),NULL,NULL,'%s');\nCOMMIT;\n",
+        opt->tran, opt->date);
+    ret = sqlite3_exec (opt->db, tmp, 0, 0, &errmsg); 
+    if (ret != SQLITE_OK) {
+      printf ("\n\n***Error in do_add(), line %d: SQLite Error entering '%s': %s\n", __LINE__, tmp, errmsg);
+      sqlite3_free (errmsg);
+      ret = -1;
+      return ret;
+    }
+  }
+
   if (opt->is_amt || opt->is_cat)
     return (do_post (1));  // need to repost everything.
   return 0;
@@ -3077,7 +3146,7 @@ int main (int argc, char *argv[])
     {"to",         1, 0, 'T'},
     {"amt",        1, 0, 'A'},
     {"cmt",        1, 0, 'm'},
-    {"ced",        0, 0, 'd'},
+    {"cedit",      0, 0, 'd'},
     {"crm",        0, 0, 'G'},
     {"edit",       0, 0, 'e'},
     {"rm",         0, 0, 'r'},
@@ -3148,8 +3217,8 @@ int main (int argc, char *argv[])
         opt->is_cmt = TRUE;
         strncpy (opt->cmt, optarg, FIELD_ARB);
         break;
-      case 'd': /* --ced */
-        opt->is_ced = TRUE;
+      case 'd': /* --cedit */
+        opt->is_cedit = TRUE;
         break;
       case 'G': /* --crm */
         opt->is_crm = TRUE;
@@ -3266,95 +3335,6 @@ int main (int argc, char *argv[])
         }
     }
   }
-
-#ifdef TEST_ARGS
-  printf ("Output Options\n");
-  printf ("opt->home_dir = %s\n"
-      "opt->is_bgt = %d\n"
-      "opt->bgt = %s\n"
-      "opt->is_cat = %d\n"
-      "opt->cat = %d\n"
-      "opt->is_catt = %d\n"
-      "opt->catt = %s\n"
-      "opt->is_tran = %d\n"
-      "opt->tran = %d\n"
-      "opt->is_ls = %d\n"
-      "opt->is_add = %d\n"
-      "opt->is_to = %d\n"
-      "opt->to = %s\n"
-      "opt->is_amt = %d\n"
-      "opt->amt = %s\n"
-      "opt->is_cmt = %d\n"
-      "opt->cmt = %s\n"
-      "opt->is_ced = %d\n"
-      "opt->is_crm = %d\n"
-      "opt->crm = %s\n"
-      "opt->is_edit = %d\n"
-      "opt->is_rm = %d\n"
-      "opt->is_split = %d\n"
-      "opt->is_adj = %d\n"
-      "opt->is_src_cat = %d\n"
-      "opt->src_cat = %d\n"
-      "opt->is_dst_cat = %d\n"
-      "opt->dst_cat = %d\n"
-      "opt->is_qry = %d\n"
-      "opt->qry = %s\n"
-      "opt->is_recalc = %d\n"
-      "opt->is_arch = %d\n"
-      "opt->is_exp = %d\n"
-      "opt->is_inc = %d\n"
-      "opt->is_net = %d\n"
-      "opt->is_beg = %d\n"
-      "opt->is_end = %d\n"
-      "opt->is_pr = %d\n"
-      "opt->is_scr = %d\n"
-      "opt->is_csv = %d\n"
-      /* more here */
-      "\n",
-      opt->home_dir,
-      opt->is_bgt,
-      opt->bgt,
-      opt->is_cat,
-      opt->cat,
-      opt->is_catt,
-      opt->catt,
-      opt->is_tran,
-      opt->tran,
-      opt->is_ls,
-      opt->is_add,
-      opt->is_to,
-      opt->to,
-      opt->is_amt,
-      opt->amt,
-      opt->is_cmt,
-      opt->cmt,
-      opt->is_ced,
-      opt->is_crm,
-      opt->crm,
-      opt->is_edit,
-      opt->is_rm,
-      opt->is_split,
-      opt->is_adj,
-      opt->is_src_cat,
-      opt->src_cat,
-      opt->is_dst_cat,
-      opt->dst_cat,
-      opt->is_qry,
-      opt->qry,
-      opt->is_recalc,
-      opt->is_arch,
-      opt->is_exp,
-      opt->is_inc,
-      opt->is_net,
-      opt->is_beg,
-      opt->is_end,
-      opt->is_pr
-      opt->is_scr
-      opt->is_csv
-      /* more here */
-      );
-
-#endif /* TEST_ARGS */
 
   strncpy (opt->home_dir, getenv ("HOME"), PATH_MAX-1);
   if (strlen (opt->home_dir) == 0) {

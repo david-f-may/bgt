@@ -60,7 +60,7 @@ using --amt), the to field (specified using --to) and a comment (specified usint
 
 B<--edit> The --edit switch allows the user to edit a transaction (an entry) by transaction id
 (using the --tran switch).  Anything specified on the command-line, up to and including all
-four of --amt, --to, --cat (or --catt), and/or --cmt, are changed on the transaction.
+five of --amt, --to, --cat (or --catt), --date, and/or --cmt, are changed on the transaction.
 
 B<--rm> The --rm switch allows the user to remove a transaction.  A copy is made of the transaction
 in the archive table and it is removed from the tran table.  A recalc is forced after a transaction
