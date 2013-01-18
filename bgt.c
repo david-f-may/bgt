@@ -1719,7 +1719,7 @@ static int do_ls (void)
   if (! opt->is_tot) {
     strcpy (tot, "0.00");
     printf ("==========================================================================================\n");
-    printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+    printf ("CATEGORY    DATE/TIME             CATEGORY NAME                                     AMOUNT\n");
     printf ("------------------------------------------------------------------------------------------\n");
   }
   for (i = 0; i < MD_ARY; i++) {
@@ -1759,7 +1759,7 @@ static int do_recalc ()
     return ret;
   strcpy (tot, "0.00");
   printf ("==========================================================================================\n");
-  printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+  printf ("CATEGORY    DATE/TIME             CATEGORY NAME                                     AMOUNT\n");
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
@@ -2340,7 +2340,7 @@ static int do_exp (void)
   /* now, print the data */
   strcpy (tot, "0.00");
   printf ("==========================================================================================\n");
-  printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+  printf ("CATEGORY    DATE/TIME             CATEGORY NAME                                     AMOUNT\n");
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
@@ -2477,7 +2477,7 @@ static int do_inc (void)
   /* now, print the data */
   strcpy (tot, "0.00");
   printf ("==========================================================================================\n");
-  printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+  printf ("CATEGORY    DATE/TIME             CATEGORY NAME                                     AMOUNT\n");
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
@@ -2614,7 +2614,7 @@ static int do_net (void)
   /* now, print the data */
   strcpy (tot, "0.00");
   printf ("==========================================================================================\n");
-  printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+  printf ("CATEGORY    DATE/TIME             CATEGORY NAME                                     AMOUNT\n");
   for (i = 0; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
@@ -2757,7 +2757,7 @@ static int do_arch (void)
   /* Now, enter transactions to get balances where they should be. */
   strcpy (tot, "0.00");
   printf ("==========================================================================================\n");
-  printf ("CATEGORY    DATE/TIME             NAME                                              AMOUNT\n");
+  printf ("CATEGORY    DATE/TIME             CATEGORY NAME                                     AMOUNT\n");
   for (i = 0, trnum = 1; i < MD_ARY; i++) {
     if (opt->catList[i].cat == 0)
       continue;
